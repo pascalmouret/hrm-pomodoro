@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { isEqual } from 'lodash';
 import { LogService, LogType } from '../log/log.service';
 
 export interface Task {
@@ -6,63 +7,73 @@ export interface Task {
   description: string;
 }
 
+type State = {
+  active: Task | null;
+  completed: Task[];
+  queued: Task[];
+};
+
+const DEFAULT_STATE: State = {
+  active: null,
+  completed: [],
+  queued: [],
+};
+
 const STORAGE_KEY = 'pomodoro:tasks';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TaskService {
-  private active: Task | null = null;
-  public readonly completed: Task[] = []
-  public readonly queued: Task[] = [];
+  private state: State = DEFAULT_STATE;
 
   constructor(
     private readonly log: LogService,
   ) {
     const localState = this.readState();
     if (localState !== null) {
-      this.active = localState.active;
-      this.completed.push(...localState.completed);
-      this.queued.push(...localState.queued);
+      this.setState(localState);
     }
+  }
+
+  public get active(): Task | null {
+    return this.state.active;
+  }
+
+  public get completed(): Task[] {
+    return this.state.completed;
+  }
+
+  public get queued(): Task[] {
+    return this.state.queued;
   }
 
   public addTask(task: Task): void {
-    this.queued.push(task);
     this.log.log(LogType.CREATE_TASK, task);
-    this.saveState();
-  }
 
-  public async startNextTask(): Promise<void> {
-    if (this.active !== null) {
-      throw new Error('Cannot start a new task while one is active');
-    }
-
-    const next = this.queued.shift();
-
-    if (next === undefined) {
-      throw new Error('No tasks to start');
-    }
-
-    this.active = next;
-
-    this.log.log(LogType.START_TASK, next);
-
-    this.saveState();
+    this.setState({
+      ...this.state,
+      queued: [...this.state.queued, task],
+    });
   }
 
   public updateTask(index: number, task: Partial<Task>): void {
-    const current = this.queued[index];
+    const current = this.state.queued[index];
 
     if (current === undefined) {
       throw new Error('Invalid index');
     }
 
-    this.queued[index] = { ...current, ...task };
+    if (isEqual(current, task)) {
+      return;
+    }
 
     this.log.log(LogType.UPDATE_TASK, { before: current, after: this.queued[index] });
 
-    this.saveState();
+    this.setState({
+      ...this.state,
+      queued: this.state.queued.map((t, i) => i === index ? { ...current, ...task } : t),
+    })
   }
 
   public removeTask(index: number): void {
@@ -72,51 +83,88 @@ export class TaskService {
       throw new Error('Invalid index');
     }
 
-    this.queued.splice(index, 1);
-
     this.log.log(LogType.REMOVE_TASK, current);
 
-    this.saveState();
+    this.setState({
+      ...this.state,
+      queued: this.state.queued.filter((_, i) => i !== index),
+    });
   }
 
-  public completeTask(index: number): void {
-    if (this.active === null) {
+  public completeTask(): void {
+    if (this.state.active === null) {
       throw new Error('No task active');
     }
 
-    this.completed.unshift(this.active);
+    this.log.log(LogType.COMPLETE_TASK, this.state.active);
 
-    this.log.log(LogType.COMPLETE_TASK, this.active);
+    this.setState({
+      active: null,
+      completed: [this.state.active, ...this.state.completed],
+      queued: this.state.queued,
+    });
 
-    this.active = null;
-
-    this.saveState();
+    if (this.state.queued.length > 0) {
+      this.startNextTask(); // will save state
+    } else {
+      this.saveState();
+    }
   }
 
   public moveTask(from: number, to: number): void {
-    if (from < 0 || from >= this.queued.length) {
+    if (from < 0 || from >= this.state.queued.length) {
       throw new Error('Invalid from index');
     }
 
-    if (to < 0 || to >= this.queued.length) {
+    if (to < 0 || to >= this.state.queued.length) {
       throw new Error('Invalid to index');
     }
 
-    this.queued[to] = this.queued.splice(from, 1, this.queued[to])[0];
+    this.log.log(LogType.MOVE_TASK, { task: this.state.queued[from], from, to });
 
-    this.log.log(LogType.MOVE_TASK, { task: this.queued[to], from, to });
+    this.setState({
+      ...this.state,
+      queued: this.state.queued.map((t, i) => {
+        if (i === from) {
+          return this.state.queued[to];
+        } else if (i === to) {
+          return this.state.queued[from];
+        } else {
+          return t;
+        }
+      })
+    });
+  }
 
+  public startNextTask(): void {
+    if (this.state.active !== null) {
+      throw new Error('Cannot start a new task while one is active');
+    }
+
+    const next = this.state.queued[0];
+
+    if (next === undefined) {
+      throw new Error('No tasks to start');
+    }
+
+    this.log.log(LogType.START_TASK, next);
+
+    this.setState({
+      ...this.state,
+      active: next,
+      queued: this.state.queued.slice(1),
+    });
+  }
+
+  private setState(state: State): void {
+    this.state = state;
     this.saveState();
   }
 
   private saveState(): void {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({
-        active: this.active,
-        completed: this.completed,
-        queued: this.queued
-      }),
+      JSON.stringify(this.state),
     );
   }
 
@@ -128,5 +176,9 @@ export class TaskService {
     }
 
     return JSON.parse(state);
+  }
+
+  public reset(): void {
+    this.setState(DEFAULT_STATE);
   }
 }

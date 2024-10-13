@@ -1,92 +1,162 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { LogService, LogType } from '../log/log.service';
 
-enum TimerState {
+export enum TimerState {
   STOPPED,
-  RUNNING,
-  PAUSED,
+  RUNNING_BREAK,
+  RUNNING_WORK,
 }
 
+const DEFAULT_WORK_DURATION = 25 * 60 * 1000;
+const DEFAULT_BREAK_DURATION = 5 * 60 * 1000;
+
 const STORAGE_KEY = 'pomodoro:timer';
+const STORAGE_KEY_REMAINING = 'pomodoro:timer:remaining';
+
 const TICK_MS = 100;
 
 @Injectable({
   providedIn: 'root'
 })
 export class TimerService {
-  private _state: TimerState = TimerState.STOPPED;
-  private remainingSubject = new BehaviorSubject<number>(0);
-  private interval: NodeJS.Timeout | null = null;
+  private interval: number | null = null;
 
-  public readonly $remaining = this.remainingSubject.asObservable();
+  private _workDuration: number = DEFAULT_WORK_DURATION;
+  private _breakDuration: number = DEFAULT_BREAK_DURATION;
+  private lastStart: number | null = null;
 
-  constructor() {
-    const localState = this.readRemaining();
-    if (localState !== null && localState > 0) {
-      this.remainingSubject.next(localState);
-      this._state = TimerState.PAUSED;
+  private stateSubject = new BehaviorSubject<TimerState>(TimerState.STOPPED);
+  private remainingMillisSubject = new BehaviorSubject<number>(0);
+
+  public readonly $remainingMillis = this.remainingMillisSubject.asObservable();
+  public readonly $state = this.stateSubject.asObservable();
+
+  constructor(private readonly log: LogService) {
+    const localState = this.readState();
+    if (localState !== null) {
+      this._workDuration = localState.workDuration;
+      this._breakDuration = localState.breakDuration;
+
+      if (localState.state !== TimerState.STOPPED) {
+        const type = localState.state === TimerState.RUNNING_WORK
+          ? LogType.STOP_WORK
+          : LogType.STOP_BREAK;
+
+        // TODO: this does not seem correct
+        this.log.log(type, undefined, new Date(localState.lastStart + (this.readRemaining() || 0)));
+      }
+
+      this.remainingMillisSubject.next(this._workDuration);
     }
-    this.$remaining.subscribe((remaining) => {
+
+    this.$remainingMillis.subscribe((remaining) => {
       this.saveRemaining(remaining);
     });
+
+    const localRemaining = this.readRemaining();
+    if (localRemaining !== null) {
+      this.remainingMillisSubject.next(localRemaining);
+    }
   }
 
-  public start(millis: number): void {
-    if (this._state !== TimerState.STOPPED) {
+  public get state(): TimerState {
+    return this.stateSubject.value;
+  }
+
+  public get workDuration(): number {
+    return this._workDuration;
+  }
+
+  public get breakDuration(): number {
+    return this._breakDuration;
+  }
+
+  public setWorkDuration(millis: number): void {
+    if (this.stateSubject.value !== TimerState.STOPPED) {
+      throw new Error('Cannot change duration while timer is running');
+    }
+
+    this._workDuration = millis;
+    this.remainingMillisSubject.next(this._workDuration);
+
+    this.saveState();
+  }
+
+  public setBreakDuration(millis: number): void {
+    if (this.stateSubject.value !== TimerState.STOPPED) {
+      throw new Error('Cannot change duration while timer is running');
+    }
+
+    this._breakDuration = millis;
+    this.saveState();
+  }
+
+  public start(): void {
+    if (this.stateSubject.value !== TimerState.STOPPED) {
       throw new Error('Timer is already running');
     }
 
-    const endDate = Date.now() + millis;
-    this._state = TimerState.RUNNING;
-    this.remainingSubject.next(millis);
+    this.startInterval('work');
+  }
+
+  private startInterval(type: 'break' | 'work'): void {
+    const millis = type === 'work' ? this._workDuration : this._breakDuration;
+
+    this.lastStart = Date.now();
+    const endDate = this.lastStart + millis;
+
+    if (type === 'work') {
+      this.stateSubject.next(TimerState.RUNNING_WORK);
+      this.log.log(LogType.START_WORK_INTERVAL, undefined);
+    } else {
+      this.stateSubject.next(TimerState.RUNNING_BREAK);
+      this.log.log(LogType.START_BREAK_INTERVAL, undefined);
+    }
 
     this.interval = setInterval(() => {
       const remaining = endDate - Date.now();
       if (remaining <= 0) {
-        this.remainingSubject.next(0);
-        this.stop();
+        clearInterval(this.interval!);
+        this.remainingMillisSubject.next(0);
+        if (this.stateSubject.value === TimerState.RUNNING_WORK) {
+          this.log.log(LogType.FINISH_WORK_INTERVAL, undefined);
+          this.startInterval('break');
+        } else {
+          this.log.log(LogType.FINISH_BREAK_INTERVAL, undefined);
+          this.startInterval('work');
+        }
       } else {
-        this.remainingSubject.next(remaining);
+        this.remainingMillisSubject.next(remaining);
       }
     }, TICK_MS);
 
-  }
-
-  public pause(): void {
-    if (this._state !== TimerState.RUNNING) {
-      throw new Error('Timer is not running');
-    }
-
-    clearInterval(this.interval as NodeJS.Timeout);
-    this._state = TimerState.PAUSED;
-  }
-
-  public resume(): void {
-    if (this._state !== TimerState.PAUSED) {
-      throw new Error('Timer is not paused');
-    }
-
-    this.start(this.remainingSubject.value);
+    this.saveState();
   }
 
   public stop(): void {
-    if (this._state === TimerState.STOPPED) {
+    if (this.stateSubject.value === TimerState.STOPPED) {
       throw new Error('Timer is already stopped');
     }
 
-    clearInterval(this.interval as NodeJS.Timeout);
+    if (this.interval !== null) {
+      clearInterval(this.interval);
+    }
 
-    this.remainingSubject.next(0);
+    if (this.stateSubject.value === TimerState.RUNNING_WORK) {
+      this.log.log(LogType.STOP_WORK, undefined);
+    } else {
+      this.log.log(LogType.STOP_BREAK, undefined);
+    }
 
-    this._state = TimerState.STOPPED;
-  }
+    this.remainingMillisSubject.next(this._workDuration);
+    this.stateSubject.next(TimerState.STOPPED);
 
-  public get state(): TimerState {
-    return this._state;
+    this.saveState();
   }
 
   private readRemaining(): number | null {
-    const state = localStorage.getItem(STORAGE_KEY);
+    const state = localStorage.getItem(STORAGE_KEY_REMAINING);
 
     if (state === null) {
       return null;
@@ -96,6 +166,47 @@ export class TimerService {
   }
 
   private saveRemaining(remaining: number): void {
-    localStorage.setItem(STORAGE_KEY, remaining.toString(10));
+    localStorage.setItem(STORAGE_KEY_REMAINING, remaining.toString(10));
+  }
+
+  // TODO: make type
+  private readState(): { workDuration: number; breakDuration: number; state: TimerState; lastStart: number } | null {
+    const state = localStorage.getItem(STORAGE_KEY);
+
+    if (state === null) {
+      return null;
+    }
+
+    return JSON.parse(state);
+  }
+
+  private saveState(): void {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        workDuration: this._workDuration,
+        breakDuration: this._breakDuration,
+        state: this.stateSubject.value,
+        lastStart: this.lastStart,
+      })
+    );
+  }
+
+  public reset(): void {
+    if (this.interval !== null) {
+      clearInterval(this.interval);
+    }
+
+    localStorage.removeItem(STORAGE_KEY_REMAINING);
+
+    this._workDuration = DEFAULT_WORK_DURATION;
+    this._breakDuration = DEFAULT_BREAK_DURATION;
+
+    this.stateSubject.next(TimerState.STOPPED);
+    this.remainingMillisSubject.next(this._workDuration);
+
+    this.lastStart = null;
+
+    this.saveState();
   }
 }

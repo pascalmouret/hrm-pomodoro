@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, times } from 'lodash';
 
 import { Task } from '../tasks/task.service';
 
@@ -12,11 +12,12 @@ export enum LogType {
   MOVE_TASK,
   START_TASK,
   COMPLETE_TASK,
-  PAUSE_TASK,
   START_WORK_INTERVAL,
   FINISH_WORK_INTERVAL,
   START_BREAK_INTERVAL,
   FINISH_BREAK_INTERVAL,
+  STOP_WORK,
+  STOP_BREAK,
 }
 
 type LogPayloads = {
@@ -25,44 +26,53 @@ type LogPayloads = {
   [LogType.REMOVE_TASK]: Task,
   [LogType.START_TASK]: Task,
   [LogType.COMPLETE_TASK]: Task,
-  [LogType.PAUSE_TASK]: Task,
   [LogType.MOVE_TASK]: { task: Task, from: number, to: number },
   [LogType.START_WORK_INTERVAL]: undefined,
   [LogType.FINISH_WORK_INTERVAL]: undefined,
   [LogType.START_BREAK_INTERVAL]: undefined,
   [LogType.FINISH_BREAK_INTERVAL]: undefined,
+  [LogType.STOP_WORK]: undefined
+  [LogType.STOP_BREAK]: undefined
 }
 
-interface Log<L extends LogType> {
+export interface LogEntry<L extends LogType> {
   timestamp: Date;
   type: L,
   payload: LogPayloads[L],
 }
 
-// TODO: levels/colors could be cool
+// TODO: changing settings
 @Injectable({
   providedIn: 'root'
 })
 export class LogService {
-  public readonly logs: Log<any>[] = [];
+  private _logs: LogEntry<any>[] = [];
 
   constructor() {
     const localState = this.readState();
     if (localState !== null) {
-      this.logs = localState;
+      this.setState(localState);
     }
   }
 
-  public log<L extends LogType>(type: L, payload: LogPayloads[L]): void {
-    this.logs.push({ timestamp: new Date(), type, payload: cloneDeep(payload) });
+  public get logs(): LogEntry<any>[] {
+    return this._logs;
+  }
+
+  private setState(logs: LogEntry<any>[]): void {
+    this._logs = logs;
     this.saveState();
+  }
+
+  public log<L extends LogType>(type: L, payload: LogPayloads[L], timestamp?: Date): void {
+    this.setState([{ timestamp: timestamp || new Date(), type, payload: cloneDeep(payload) }, ...this._logs])
   }
 
   private saveState(): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.logs));
   }
 
-  private readState(): Log<any>[] | null {
+  private readState(): LogEntry<any>[] | null {
     const item = localStorage.getItem(STORAGE_KEY);
 
     if (item === null) {
@@ -70,5 +80,9 @@ export class LogService {
     }
 
     return JSON.parse(item);
+  }
+
+  public reset(): void {
+    this.setState([]);
   }
 }
