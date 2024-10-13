@@ -2,18 +2,18 @@
   <p-card [header]="tasks.active.name">
     {{ tasks.active.description }}
     <ng-template pTemplate="footer">
-      <div class="flex align-content-center">
-        <p-button label="Complete" severity="primary" class="w-full" (onClick)="tasks.completeTask()" />
+      <div class="flex flex-row-reverse">
+        <p-button label="Complete" severity="primary" (onClick)="tasks.completeTask()" />
       </div>
     </ng-template>
   </p-card>
 </p-fieldset>
 
-<div class="tasks">
-  <p-fieldset legend="Coming up" class="queue">
+<div class="flex flex-row gap-2">
+  <p-fieldset legend="Coming up" class="flex-1">
     <div *ngFor="let task of tasks.queued; index as i">
       <div class="h-1rem w-100" pDroppable (onDrop)="onDrop(i)" (onDragEnter)="onDragEnter($event)" (onDragLeave)="onDragLeave()"></div>
-      <p-card  [header]="task.name" pDraggable (onDragStart)="onDragStart(i)" (onDragEnd)="onDragEnd()">
+      <p-card [header]="task.name" pDraggable (onDragStart)="onDragStart(i)" (onDragEnd)="onDragEnd()" class="relative">
         {{ task.description }}
         <ng-template pTemplate="footer">
           <div class="flex gap-3">
@@ -24,11 +24,14 @@
       </p-card>
     </div>
     <div class="h-1rem w-100" pDroppable (onDrop)="onDrop(tasks.queued.length)" (onDragEnter)="onDragEnter($event)" (onDragLeave)="onDragLeave()"></div>
-    <p-button label="Add Task" (onClick)="createTask()"></p-button>
-    <p-button (onClick)="addExampleTasks()">Add Examples</p-button>
+
+    <div class="flex flex-row gap-2 justify-content-center">
+      <p-button label="Add Task" (onClick)="createTask()"></p-button>
+      <p-button (onClick)="addExampleTasks()">Add Examples</p-button>
+    </div>
   </p-fieldset>
 
-  <p-fieldset legend="Completed" class="queue">
+  <p-fieldset legend="Completed" class="flex-1">
     <p-card *ngFor="let task of tasks.completed" [header]="task.name" class="m-1">{{ task.description }}</p-card>
   </p-fieldset>
 </div>

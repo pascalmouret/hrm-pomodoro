@@ -22,7 +22,6 @@
 
     <p-button
       *ngIf="timer.state === TimerState.STOPPED && (tasks.active !== null || tasks.queued.length !== 0)"
-      [disabled]="true"
       label="Start"
       (onClick)="timer.start()"
     />

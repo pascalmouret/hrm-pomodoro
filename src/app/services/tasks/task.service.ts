@@ -4,7 +4,7 @@ import { LogService, LogType } from '../log/log.service';
 
 export interface Task {
   name: string;
-  description: string;
+  description: string | null;
 }
 
 type State = {
