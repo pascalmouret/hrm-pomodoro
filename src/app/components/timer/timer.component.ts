@@ -3,12 +3,12 @@ import { Component, OnDestroy } from '@angular/core';
 import { Button } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TabViewModule } from 'primeng/tabview';
+import { TooltipModule } from 'primeng/tooltip';
 import { Subscription, timer } from 'rxjs';
+import { TaskService } from '../../services/tasks/task.service';
 import { TimerService, TimerState } from '../../services/timer/timer.service';
 import { millisAsPretty } from '../../util/duration';
 
-// TODO: Disable start if there is no tasks
-// TODO: show in title
 @Component({
   selector: 'pomodoro-timer',
   standalone: true,
@@ -17,16 +17,21 @@ import { millisAsPretty } from '../../util/duration';
     CardModule,
     TabViewModule,
     Button,
-    NgIf
+    NgIf,
+    TooltipModule
   ],
 })
 export class TimerComponent implements OnDestroy {
-  private readonly subscription: Subscription;
-
+  protected readonly TimerState = TimerState;
   public prettyRemaining: string = '';
 
-  constructor(public readonly timerService: TimerService) {
-    this.subscription = this.timerService.$remainingMillis.subscribe((remaining) => {
+  private readonly subscription: Subscription;
+
+  constructor(
+    public readonly timer: TimerService,
+    public readonly tasks: TaskService,
+  ) {
+    this.subscription = this.timer.$remainingMillis.subscribe((remaining) => {
       this.prettyRemaining = millisAsPretty(remaining);
     });
   }
@@ -34,7 +39,4 @@ export class TimerComponent implements OnDestroy {
   public ngOnDestroy(): void {
     this.subscription.unsubscribe();
   }
-
-  protected readonly TimerState = TimerState;
-  protected readonly timer = timer;
 }

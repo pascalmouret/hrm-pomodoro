@@ -1,14 +1,31 @@
 <p-card>
   <div class="text-center h-2rem text-color-secondary">
-    <p *ngIf="timerService.state === TimerState.STOPPED">🍅 Not started 🍅</p>
-    <p *ngIf="timerService.state === TimerState.RUNNING_WORK">💼 Work interval 💼</p>
-    <p *ngIf="timerService.state === TimerState.RUNNING_BREAK">🌴 Take a break 🌴</p>
+    <p *ngIf="timer.state === TimerState.STOPPED">🍅 Not started 🍅</p>
+    <p *ngIf="timer.state === TimerState.RUNNING_WORK">💼 Work interval 💼</p>
+    <p *ngIf="timer.state === TimerState.RUNNING_BREAK">🌴 Take a break 🌴</p>
   </div>
   <div class="text-center text-8xl">
     <p class="inline">{{ prettyRemaining }}</p>
   </div>
-  <div class="controls">
-    <p-button *ngIf="timerService.state === TimerState.STOPPED" label="Start" (onClick)="timerService.start()"/>
-    <p-button *ngIf="timerService.state !== TimerState.STOPPED" label="Stop" (onClick)="timerService.stop()"/>
+  <div class="flex justify-content-center">
+    <!-- Tooltips only work on enabled buttons -->
+    <div
+      pTooltip="You need at least one task"
+      tooltipPosition="top"
+      *ngIf="timer.state === TimerState.STOPPED && tasks.active === null && tasks.queued.length === 0"
+    >
+      <p-button
+        [disabled]="true"
+        label="Start"
+      />
+    </div>
+
+    <p-button
+      *ngIf="timer.state === TimerState.STOPPED && (tasks.active !== null || tasks.queued.length !== 0)"
+      [disabled]="true"
+      label="Start"
+      (onClick)="timer.start()"
+    />
+    <p-button *ngIf="timer.state !== TimerState.STOPPED" label="Stop" (onClick)="timer.stop()"/>
   </div>
 </p-card>
