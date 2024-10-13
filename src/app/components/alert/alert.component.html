@@ -1,0 +1,13 @@
+<p *ngIf="config.data.type === AlertType.WORK_FINISHED">
+  You finished a work interval! Time for a break!
+</p>
+<p *ngIf="config.data.type === AlertType.BREAK_FINISHED">
+  Break time is over! Time to get back to work!
+</p>
+<div *ngIf="config.data.type === AlertType.WORK_FINISHED">
+  <p-button label="Complete current task" (onClick)="completeCurrent()"/>
+  <p-button label="Continue wit task" (onClick)="ref.close()"/>
+</div>
+<div *ngIf="config.data.type === AlertType.BREAK_FINISHED">
+  <p-button label="Lets get to work" (onClick)="ref.close()"/>
+</div>

@@ -1,0 +1,8 @@
+<p-timeline [value]="log.logs">
+  <ng-template pTemplate="content" let-log>
+    <p>{{ prettyMessage(log) }}</p>
+  </ng-template>
+  <ng-template pTemplate="opposite" let-log>
+    {{ log.timestamp | date: 'short' }}
+  </ng-template>
+</p-timeline>

@@ -1,0 +1,29 @@
+<p-fieldset *ngIf="tasks.active" legend="Current Task">
+  <p-card [header]="tasks.active.name">
+    {{ tasks.active.description }}
+    <ng-template pTemplate="footer">
+      <div class="flex align-content-center">
+        <p-button label="Complete" severity="primary" class="w-full" styleClass="w-full" (onClick)="tasks.completeTask()" />
+      </div>
+    </ng-template>
+  </p-card>
+</p-fieldset>
+
+<div class="tasks">
+  <p-fieldset legend="Coming up" class="queue">
+    <p-card *ngFor="let task of tasks.queued; index as i" [header]="task.name">
+      {{ task.description }}
+      <ng-template pTemplate="footer">
+        <div class="flex gap-3">
+          <p-button label="Edit" severity="primary" class="w-full" styleClass="w-full" (onClick)="editTask(i)" />
+          <p-button label="Remove" severity="danger" class="w-full" styleClass="w-full" (onClick)="removeTask(i)" />
+        </div>
+      </ng-template>
+    </p-card>
+    <p-button label="Add Task" (onClick)="createTask()"></p-button>
+    <p-button (onClick)="addExampleTasks()">Add Examples</p-button>
+  </p-fieldset>
+  <p-fieldset legend="Completed" class="queue">
+    <p-card *ngFor="let task of tasks.completed" [header]="task.name">{{ task.description }}</p-card>
+  </p-fieldset>
+</div>

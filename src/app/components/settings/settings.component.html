@@ -1,0 +1,49 @@
+<div>
+  <p-panel header="Work Timer">
+    <div>
+      <label for="workDurationMinutes">Minutes</label>
+      <p-inputNumber
+        id="workDurationMinutes"
+        [(ngModel)]="workDurationMinutes"
+        [min]="0"
+        (ngModelChange)="updateWorkDuration()"
+      ></p-inputNumber>
+    </div>
+    <div>
+      <label for="workDurationMinutes">Seconds</label>
+      <p-inputNumber
+        id="workDurationSeconds"
+        [(ngModel)]="workDurationSeconds"
+        [min]="1"
+        [max]="59"
+        (ngModelChange)="updateWorkDuration()"
+      ></p-inputNumber>
+    </div>
+  </p-panel>
+
+  <p-panel header="Break Timer">
+    <div>
+      <label for="breakDurationMinutes">Minutes</label>
+      <p-inputNumber
+        id="breakDurationMinutes"
+        [(ngModel)]="breakDurationMinutes"
+        [min]="0"
+        (ngModelChange)="updateBreakDuration()"
+      ></p-inputNumber>
+    </div>
+    <div>
+      <label for="breakDurationMinutes">Seconds</label>
+      <p-inputNumber
+        id="breakDurationSeconds"
+        [(ngModel)]="breakDurationSeconds"
+        [min]="0"
+        [max]="59"
+        (ngModelChange)="updateBreakDuration()"
+      ></p-inputNumber>
+    </div>
+  </p-panel>
+
+  <p-panel header="Danger Zone">
+    <p-button class="p-button-danger" (onClick)="resetAll()">Reset All</p-button>
+  </p-panel>
+</div>

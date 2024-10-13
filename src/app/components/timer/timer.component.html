@@ -1,0 +1,14 @@
+<p-card>
+  <div class="text-center h-2rem text-color-secondary">
+    <p *ngIf="timerService.state === TimerState.STOPPED">🍅 Not started 🍅</p>
+    <p *ngIf="timerService.state === TimerState.RUNNING_WORK">💼 Work interval 💼</p>
+    <p *ngIf="timerService.state === TimerState.RUNNING_BREAK">🌴 Take a break 🌴</p>
+  </div>
+  <div class="text-center text-8xl">
+    <p class="inline">{{ prettyRemaining }}</p>
+  </div>
+  <div class="controls">
+    <p-button *ngIf="timerService.state === TimerState.STOPPED" label="Start" (onClick)="timerService.start()"/>
+    <p-button *ngIf="timerService.state !== TimerState.STOPPED" label="Stop" (onClick)="timerService.stop()"/>
+  </div>
+</p-card>
