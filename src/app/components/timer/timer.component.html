@@ -1,4 +1,4 @@
-<p-card>
+<div class="mb-3 mt-3 bg-white p-3">
   <div class="text-center h-2rem text-color-secondary">
     <p *ngIf="timer.state === TimerState.STOPPED">🍅 Not started 🍅</p>
     <p *ngIf="timer.state === TimerState.RUNNING_WORK">💼 Work interval 💼</p>
@@ -27,4 +27,4 @@
     />
     <p-button *ngIf="timer.state !== TimerState.STOPPED" label="Stop" (onClick)="timer.stop()"/>
   </div>
-</p-card>
+</div>
