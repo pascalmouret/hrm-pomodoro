@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { CardModule } from 'primeng/card';
 import { TimelineModule } from 'primeng/timeline';
 import { LogEntry, LogService, LogType } from '../../services/log/log.service';
+import { millisAsPretty } from '../../util/duration';
 
 const MARKERS: Record<LogType, string> = {
   [LogType.CREATE_TASK]: '➕',
@@ -17,6 +18,8 @@ const MARKERS: Record<LogType, string> = {
   [LogType.FINISH_BREAK_INTERVAL]: '🌴',
   [LogType.STOP_WORK]: '🛑',
   [LogType.STOP_BREAK]: '🛑',
+  [LogType.CHANGE_WORK_DURATION]: '⏱️',
+  [LogType.CHANGE_BREAK_DURATION]: '⏱️',
 }
 
 @Component({
@@ -61,6 +64,10 @@ export default class LogComponent {
         return 'Stopped work';
       case LogType.STOP_BREAK:
         return 'Stopped break';
+      case LogType.CHANGE_WORK_DURATION:
+        return 'Changed work duration';
+      case LogType.CHANGE_BREAK_DURATION:
+        return 'Changed break duration';
       default:
         throw new Error('Unexpected log type');
     }
@@ -84,6 +91,10 @@ export default class LogComponent {
         return result.join('\n');
       case LogType.MOVE_TASK:
         return `Moved from position ${entry.payload.from + 1} to ${entry.payload.to + 1}`;
+      case LogType.CHANGE_WORK_DURATION:
+        return `Changed from ${millisAsPretty(entry.payload.before)} to ${millisAsPretty(entry.payload.after)}.`;
+      case LogType.CHANGE_BREAK_DURATION:
+        return `Changed from ${millisAsPretty(entry.payload.before)} to ${millisAsPretty(entry.payload.after)}.`;
       default:
         return undefined
     }

@@ -77,6 +77,8 @@ export class TimerService {
       throw new Error('Cannot change duration while timer is running');
     }
 
+    this.log.log(LogType.CHANGE_WORK_DURATION, { before: this._workDuration, after: millis });
+
     this._workDuration = millis;
     this.remainingMillisSubject.next(this._workDuration);
 
@@ -87,6 +89,8 @@ export class TimerService {
     if (this.stateSubject.value !== TimerState.STOPPED) {
       throw new Error('Cannot change duration while timer is running');
     }
+
+    this.log.log(LogType.CHANGE_BREAK_DURATION, { before: this._breakDuration, after: millis });
 
     this._breakDuration = millis;
     this.saveState();

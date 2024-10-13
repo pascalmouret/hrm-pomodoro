@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { cloneDeep, times } from 'lodash';
+import { cloneDeep } from 'lodash';
 
 import { Task } from '../tasks/task.service';
 
@@ -18,6 +18,8 @@ export enum LogType {
   FINISH_BREAK_INTERVAL,
   STOP_WORK,
   STOP_BREAK,
+  CHANGE_WORK_DURATION,
+  CHANGE_BREAK_DURATION,
 }
 
 type LogPayloads = {
@@ -31,8 +33,10 @@ type LogPayloads = {
   [LogType.FINISH_WORK_INTERVAL]: undefined,
   [LogType.START_BREAK_INTERVAL]: undefined,
   [LogType.FINISH_BREAK_INTERVAL]: undefined,
-  [LogType.STOP_WORK]: undefined
-  [LogType.STOP_BREAK]: undefined
+  [LogType.STOP_WORK]: undefined,
+  [LogType.STOP_BREAK]: undefined,
+  [LogType.CHANGE_WORK_DURATION]: { before: number, after: number },
+  [LogType.CHANGE_BREAK_DURATION]: { before: number, after: number },
 }
 
 export interface LogEntry<L extends LogType> {
@@ -41,7 +45,6 @@ export interface LogEntry<L extends LogType> {
   payload: LogPayloads[L],
 }
 
-// TODO: changing settings
 @Injectable({
   providedIn: 'root'
 })
