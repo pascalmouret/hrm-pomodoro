@@ -33,6 +33,10 @@ export class TimerService {
   public readonly $state = this.stateSubject.asObservable();
 
   constructor(private readonly log: LogService) {
+    this.$remainingMillis.subscribe((remaining) => {
+      this.saveRemaining(remaining);
+    });
+
     const localState = this.readState();
     if (localState !== null) {
       this._workDuration = localState.workDuration;
@@ -43,20 +47,11 @@ export class TimerService {
           ? LogType.STOP_WORK
           : LogType.STOP_BREAK;
 
-        // TODO: this does not seem correct
         this.log.log(type, undefined, new Date(localState.lastStart + (this.readRemaining() || 0)));
       }
 
       this.remainingMillisSubject.next(this._workDuration);
-    }
-
-    this.$remainingMillis.subscribe((remaining) => {
-      this.saveRemaining(remaining);
-    });
-
-    const localRemaining = this.readRemaining();
-    if (localRemaining !== null) {
-      this.remainingMillisSubject.next(localRemaining);
+      this.saveState();
     }
   }
 
