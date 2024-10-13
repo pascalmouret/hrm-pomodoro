@@ -37,44 +37,59 @@ const DEFAULT_TITLE = '🍅 Pomodoro';
 export class AppComponent {
   private alertRef: DynamicDialogRef | null = null;
 
+  private notificationsEnabled = false;
+
   constructor(
     private readonly title: Title,
     private readonly dialog: DialogService,
     private readonly timer: TimerService,
     private readonly tasks: TaskService,
   ) {
-    this.timer.$state.subscribe((state) => {
-      if (state === TimerState.RUNNING_WORK && this.tasks.active === null) {
-        this.tasks.startNextTask();
-      }
-      if (state === TimerState.STOPPED) {
-        this.title.setTitle(DEFAULT_TITLE);
-      }
-    });
+    this.timer.$state.subscribe((state) => this.stateEventHandler(state));
+    this.timer.$remainingMillis.subscribe((remaining) => this.remainingEventHandler(remaining));
 
-    this.timer.$remainingMillis.subscribe((remaining) => {
-      if (this.timer.state === TimerState.RUNNING_WORK) {
-        this.title.setTitle(`💼 ${millisAsPretty(remaining)} ${this.tasks.active?.name}`);
-      } else if (this.timer.state === TimerState.RUNNING_BREAK) {
-        this.title.setTitle(`🌴 ${millisAsPretty(remaining)}`);
+    if ('Notification' in window) {
+      Notification.requestPermission().then((permission) => {
+        this.notificationsEnabled = permission === 'granted';
+      });
+    }
+  }
+
+  private stateEventHandler(state: TimerState): void {
+    if (state === TimerState.RUNNING_WORK && this.tasks.active === null) {
+      this.tasks.startNextTask();
+    }
+    if (state === TimerState.STOPPED) {
+      this.title.setTitle(DEFAULT_TITLE);
+    }
+  }
+
+  private remainingEventHandler(remaining: number): void {
+    if (this.timer.state === TimerState.RUNNING_WORK) {
+      this.title.setTitle(`💼 ${millisAsPretty(remaining)} ${this.tasks.active?.name}`);
+    } else if (this.timer.state === TimerState.RUNNING_BREAK) {
+      this.title.setTitle(`🌴 ${millisAsPretty(remaining)}`);
+    }
+
+    if (remaining === 0) {
+      if (this.alertRef !== null) {
+        this.alertRef.destroy(); // no fancy animation needed
       }
 
-      if (remaining === 0) {
-        if (this.alertRef !== null) {
-          this.alertRef.destroy(); // no fancy animation needed
+      const alertType = this.timer.state === TimerState.RUNNING_WORK
+        ? AlertType.WORK_FINISHED
+        : AlertType.BREAK_FINISHED;
+
+      this.alertRef = this.dialog.open(
+        AlertComponent,
+        {
+          data: { type: alertType },
         }
+      );
 
-        const alertType = this.timer.state === TimerState.RUNNING_WORK
-          ? AlertType.WORK_FINISHED
-          : AlertType.BREAK_FINISHED;
-
-        this.alertRef = this.dialog.open(
-          AlertComponent,
-          {
-            data: { type: alertType },
-          }
-        );
+      if (document.hidden && this.notificationsEnabled) {
+        new Notification(`Your ${alertType === AlertType.WORK_FINISHED ? 'work' : 'break'} timer just finished!`);
       }
-    });
+    }
   }
 }
