@@ -1,5 +1,5 @@
 <p-fieldset *ngIf="tasks.active" legend="Current Task">
-  <p-card [header]="tasks.active.name">
+  <p-card [header]="tasks.active.name" [style]="{ 'background-color': 'var(--red-50)' }">
     {{ tasks.active.description }}
     <ng-template pTemplate="footer">
       <div class="flex flex-row-reverse">
@@ -13,7 +13,7 @@
   <p-fieldset legend="Coming up" class="flex-1">
     <div *ngFor="let task of tasks.queued; index as i">
       <div class="h-1rem w-100" pDroppable (onDrop)="onDrop(i)" (onDragEnter)="onDragEnter($event)" (onDragLeave)="onDragLeave()"></div>
-      <p-card [header]="task.name" pDraggable (onDragStart)="onDragStart(i)" (onDragEnd)="onDragEnd()" class="relative">
+      <p-card [header]="task.name" pDraggable (onDragStart)="onDragStart(i)" (onDragEnd)="onDragEnd()" [style]="{ 'background-color': 'var(--yellow-50)' }">
         {{ task.description }}
         <ng-template pTemplate="footer">
           <div class="flex gap-3">
@@ -32,6 +32,6 @@
   </p-fieldset>
 
   <p-fieldset legend="Completed" class="flex-1">
-    <p-card *ngFor="let task of tasks.completed" [header]="task.name" class="m-1">{{ task.description }}</p-card>
+    <p-card *ngFor="let task of tasks.completed" [header]="task.name" class="m-1" [style]="{ 'background-color': 'var(--gray-50)' }">{{ task.description }}</p-card>
   </p-fieldset>
 </div>
