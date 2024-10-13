@@ -10,6 +10,7 @@ import { TaskService } from '../../services/tasks/task.service';
 import TaskEditComponent from './edit/task-edit.component';
 
 // TODO: drag handle
+// TODO: textarea for description
 @Component({
   selector: 'pomodoro-tasks',
   standalone: true,

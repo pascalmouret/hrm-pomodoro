@@ -1,49 +1,54 @@
-<div>
-  <p-panel header="Work Timer">
+<div class="flex flex-row gap-3 p-fluid mb-3">
+  <p-panel header="💼 Work Timer" class="flex-1">
     <div>
-      <label for="workDurationMinutes">Minutes</label>
+      <label for="workDurationMinutes" class="font-bold">Minutes</label>
       <p-inputNumber
         id="workDurationMinutes"
         [(ngModel)]="workDurationMinutes"
         [min]="0"
         (ngModelChange)="updateWorkDuration()"
+        [disabled]="isDisabled"
       ></p-inputNumber>
     </div>
     <div>
-      <label for="workDurationMinutes">Seconds</label>
+      <label for="workDurationMinutes" class="font-bold">Seconds</label>
       <p-inputNumber
         id="workDurationSeconds"
         [(ngModel)]="workDurationSeconds"
         [min]="1"
         [max]="59"
         (ngModelChange)="updateWorkDuration()"
+        [disabled]="isDisabled"
       ></p-inputNumber>
     </div>
   </p-panel>
 
-  <p-panel header="Break Timer">
+  <p-panel header="🌴 Break Timer" class="flex-1">
     <div>
-      <label for="breakDurationMinutes">Minutes</label>
+      <label for="breakDurationMinutes" class="font-bold">Minutes</label>
       <p-inputNumber
         id="breakDurationMinutes"
         [(ngModel)]="breakDurationMinutes"
         [min]="0"
         (ngModelChange)="updateBreakDuration()"
+        [disabled]="isDisabled"
       ></p-inputNumber>
     </div>
     <div>
-      <label for="breakDurationMinutes">Seconds</label>
+      <label for="breakDurationMinutes" class="font-bold">Seconds</label>
       <p-inputNumber
         id="breakDurationSeconds"
         [(ngModel)]="breakDurationSeconds"
         [min]="0"
         [max]="59"
         (ngModelChange)="updateBreakDuration()"
+        [disabled]="isDisabled"
       ></p-inputNumber>
     </div>
   </p-panel>
-
-  <p-panel header="Danger Zone">
-    <p-button class="p-button-danger" (onClick)="resetAll()">Reset All</p-button>
-  </p-panel>
 </div>
+
+<p-panel header="Danger Zone">
+  <p-confirmDialog></p-confirmDialog>
+  <p-button severity="danger" (onClick)="resetAll()">Reset All</p-button>
+</p-panel>

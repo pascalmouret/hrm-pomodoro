@@ -1,17 +1,17 @@
 import { NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ConfirmationService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { PanelModule } from 'primeng/panel';
 import { LogService } from '../../services/log/log.service';
 import { TaskService } from '../../services/tasks/task.service';
-import { TimerService } from '../../services/timer/timer.service';
-import { InputNumberModule } from 'primeng/inputnumber';
+import { TimerService, TimerState } from '../../services/timer/timer.service';
 import { MILLS_IN_MINUTE, MILLS_IN_SECOND } from '../../util/duration';
 
-// TODO: use forms
-// TODO: disable while timer is running
 @Component({
   selector: 'pomodoro-settings',
   standalone: true,
@@ -23,7 +23,9 @@ import { MILLS_IN_MINUTE, MILLS_IN_SECOND } from '../../util/duration';
     InputNumberModule,
     FormsModule,
     Button,
+    ConfirmDialogModule,
   ],
+  providers: [ConfirmationService],
 })
 export class SettingsComponent {
   public workDurationMinutes!: number;
@@ -32,12 +34,20 @@ export class SettingsComponent {
   public breakDurationMinutes!: number;
   public breakDurationSeconds!: number;
 
+  public isDisabled: boolean = false;
+
   constructor(
+    private readonly confirm: ConfirmationService,
     public readonly timer: TimerService,
     private readonly log: LogService,
     private readonly task: TaskService,
   ) {
     this.initForm();
+    this.isDisabled = this.timer.state !== TimerState.STOPPED;
+
+    this.timer.$state.subscribe((state) => {
+      this.isDisabled = state !== TimerState.STOPPED;
+    });
   }
 
   private initForm(): void {
@@ -64,13 +74,18 @@ export class SettingsComponent {
     }
   }
 
-  // TODO: show confirmation
   public resetAll(): void {
-    this.task.reset();
-    this.log.reset();
-    this.timer.reset();
+    this.confirm.confirm({
+      header: 'Reset All',
+      message: 'This will delete all tasks and logs. Are you sure?',
+      accept: () => {
+        this.task.reset();
+        this.log.reset();
+        this.timer.reset();
 
-    this.initForm();
+        this.initForm();
+      },
+    });
   }
 
   private toMillis(minutes: number, seconds: number): number {
