@@ -120,19 +120,16 @@ export class TaskService {
       throw new Error('Invalid to index');
     }
 
+    const newQueued = [...this.state.queued];
+    const element = newQueued[from];
+    newQueued.splice(from, 1);
+    newQueued.splice(to, 0, element);
+
     this.log.log(LogType.MOVE_TASK, { task: this.state.queued[from], from, to });
 
     this.setState({
       ...this.state,
-      queued: this.state.queued.map((t, i) => {
-        if (i === from) {
-          return this.state.queued[to];
-        } else if (i === to) {
-          return this.state.queued[from];
-        } else {
-          return t;
-        }
-      })
+      queued: newQueued,
     });
   }
 

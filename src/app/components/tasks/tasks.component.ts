@@ -2,12 +2,14 @@ import { NgForOf, NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { Button } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { DragDropModule } from 'primeng/dragdrop';
 import { DialogService } from 'primeng/dynamicdialog';
 import { FieldsetModule } from 'primeng/fieldset';
 import { PanelModule } from 'primeng/panel';
 import { TaskService } from '../../services/tasks/task.service';
 import TaskEditComponent from './edit/task-edit.component';
 
+// TODO: drag handle
 @Component({
   selector: 'pomodoro-tasks',
   standalone: true,
@@ -19,11 +21,15 @@ import TaskEditComponent from './edit/task-edit.component';
     CardModule,
     NgForOf,
     FieldsetModule,
+    DragDropModule,
   ],
   providers: [DialogService],
   styleUrl: './tasks.component.scss'
 })
 export class TasksComponent {
+  private currentDragIndex: number | null = null;
+  private currentDrop: Element | null = null;
+
   constructor(
     public tasks: TaskService,
     public dialog: DialogService,
@@ -54,5 +60,46 @@ export class TasksComponent {
       TaskEditComponent,
       { header: 'Create Task' },
     );
+  }
+
+  public onDragStart(taskIndex: number): void {
+    this.currentDragIndex = taskIndex;
+  }
+
+  public onDragEnd(): void {
+    this.currentDragIndex = null;
+
+    if (this.currentDrop !== null) {
+      this.currentDrop.classList.remove('border-solid', 'border-2', 'border-blue-500', 'border-round-md');
+      this.currentDrop = null;
+    }
+  }
+
+  public onDrop(targetPosition: number): void {
+    if (this.currentDragIndex === null) {
+      return;
+    }
+
+    if (targetPosition === this.currentDragIndex) {
+      return;
+    }
+
+    if (targetPosition >= this.tasks.queued.length - 1) {
+      targetPosition -= 1;
+    }
+
+    this.tasks.moveTask(this.currentDragIndex, targetPosition);
+  }
+
+  public onDragEnter(event: DragEvent): void {
+    this.currentDrop = event.target as Element;
+    this.currentDrop.classList.add('border-solid', 'border-2', 'border-blue-500', 'border-round-md');
+  }
+
+  public onDragLeave(): void {
+    if (this.currentDrop !== null) {
+      this.currentDrop.classList.remove('border-solid', 'border-2', 'border-blue-500', 'border-round-md');
+      this.currentDrop = null;
+    }
   }
 }

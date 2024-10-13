@@ -169,7 +169,6 @@ export class TimerService {
     localStorage.setItem(STORAGE_KEY_REMAINING, remaining.toString(10));
   }
 
-  // TODO: make type
   private readState(): { workDuration: number; breakDuration: number; state: TimerState; lastStart: number } | null {
     const state = localStorage.getItem(STORAGE_KEY);
 
