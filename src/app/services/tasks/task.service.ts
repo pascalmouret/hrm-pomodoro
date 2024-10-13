@@ -64,15 +64,17 @@ export class TaskService {
       throw new Error('Invalid index');
     }
 
-    if (isEqual(current, task)) {
+    const next = { ...current, ...task };
+
+    if (isEqual(current, next)) {
       return;
     }
 
-    this.log.log(LogType.UPDATE_TASK, { before: current, after: this.queued[index] });
+    this.log.log(LogType.UPDATE_TASK, { before: current, after: next });
 
     this.setState({
       ...this.state,
-      queued: this.state.queued.map((t, i) => i === index ? { ...current, ...task } : t),
+      queued: this.state.queued.map((t, i) => i === index ? next : t),
     })
   }
 
