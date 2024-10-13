@@ -9,6 +9,8 @@ import { PanelModule } from 'primeng/panel';
 import { TaskService } from '../../services/tasks/task.service';
 import TaskEditComponent from './edit/task-edit.component';
 
+const OPEN_DROP_ZONE_CLASS = ['border-solid', 'border-2', 'border-blue-500', 'border-round-md', 'h-10rem'];
+
 @Component({
   selector: 'pomodoro-tasks',
   standalone: true,
@@ -68,7 +70,7 @@ export class TasksComponent {
     this.currentDragIndex = null;
 
     if (this.currentDrop !== null) {
-      this.currentDrop.classList.remove('border-solid', 'border-2', 'border-blue-500', 'border-round-md');
+      this.currentDrop.classList.remove(...OPEN_DROP_ZONE_CLASS);
       this.currentDrop = null;
     }
   }
@@ -91,12 +93,12 @@ export class TasksComponent {
 
   public onDragEnter(event: DragEvent): void {
     this.currentDrop = event.target as Element;
-    this.currentDrop.classList.add('border-solid', 'border-2', 'border-blue-500', 'border-round-md');
+    this.currentDrop.classList.add(...OPEN_DROP_ZONE_CLASS);
   }
 
   public onDragLeave(): void {
     if (this.currentDrop !== null) {
-      this.currentDrop.classList.remove('border-solid', 'border-2', 'border-blue-500', 'border-round-md');
+      this.currentDrop.classList.remove(...OPEN_DROP_ZONE_CLASS);
       this.currentDrop = null;
     }
   }
